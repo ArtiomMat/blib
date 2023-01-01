@@ -209,13 +209,31 @@ namespace blib {
 		}
 	};
 
-	class CBrain_Cfg {
-		
+	enum ActivationFunction {
+		AFN_NULL = 0, // For linear regression output layer
+		AFN_TANH, // TanH, for hidden layers, longer learning
+		AFN_RELU, // ReLU, for hidden layers mostly, efficient
+		AFN_SIGMOID, // Sigmoid, for binary output layer usually
+		AFN_SOFTMAX, // Softmax for multi-class classification OUTPUTS
+	};
+	
+	enum LayerType {
+		LAYER_N,		// Neural layer(Multi-Layered P)
+		LAYER_C,		// Convolution without any pooling
+		LAYER_C_MAX,	// Convolution with max-pool applied
+		LAYER_C_AVG,	// Convolution with average-pool applied
+		LAYER_C_MIN,	// Convolution with min-pool applied
+	};
+
+	struct LayerCfg {
+		char type;
+		int unitsN;
+		char afn;
 	};
 
 	// Convolutional brain
-	class CBrain {
-
+	class BrainCfg {
+		
 	};
 
 	// Fully connected brain

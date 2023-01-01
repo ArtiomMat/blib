@@ -1,5 +1,5 @@
 from PIL import Image
-wanted_size = 128
+wanted_size = 64
 
 i,j = 0,0
 #disabled = [0,1,3,5,6,13,15,17,19,42,36,37,39,24,25,48,49,50,55,58,59,57,65,67,56,76,73,71,63,104,85,89,90,79,80,94,112,116,118,96]
@@ -8,8 +8,8 @@ disabled.sort()
 total = 124
 
 for i in range(0,total):
-	image = Image.open('data_men_bad_raw/'+str(i)+'.jpg')
-	image = image.convert('L')
+	image = Image.open('../data_femboys_raw/'+str(i)+'.jpg')
+	#image = image.convert('L')
 
 	w,h=image.width,image.height
 	
@@ -42,4 +42,4 @@ for i in range(0,total):
 
 
 
-	image.save('data_men_bad/'+str(i)+'.png')
+	image.save('../data_men_bad2/'+str(i)+'.png')
