@@ -4,7 +4,6 @@
 #include <stdint.h>
 
 namespace blib {
-	// CNN
 
 	typedef unsigned char byte;
 	
@@ -123,7 +122,6 @@ namespace blib {
 			return ret;
 		}
 		
-		// TODO: WRONG BASE ON poolAvg
 		Map poolMax(byte dimPool, byte stride) {
 			if (dim % stride != 0 || dimPool > dim)
 				return Map(0);
@@ -209,6 +207,20 @@ namespace blib {
 
 			return ret;
 		}
+	};
+
+	class CBrain_Cfg {
+		
+	};
+
+	// Convolutional brain
+	class CBrain {
+
+	};
+
+	// Fully connected brain
+	class FBrain {
+
 	};
 
 	// MLP
