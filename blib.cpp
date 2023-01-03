@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include "u.hpp"
 
 namespace blib {
 
@@ -10,9 +11,37 @@ namespace blib {
 	// Maps are 1:1 ratio and are 1 channel, so essentially they ARE a channel.
 	// Maybe in later versions they will be renamed to channels and actual maps
 	// will be implemented.
-	struct Map {
-		byte* pixels=nullptr;
-		uint32_t dim=0;
+	class Map {
+		public:
+		byte* pixels;
+		uint32_t dim;
+
+		Map() {
+			pixels = nullptr;
+			dim = 0;
+		}
+
+		// NOTE: Copies _pixels
+		Map(byte* _pixels, int _dim) {
+			dim = _dim;
+			pixels = (byte*)malloc(dim*dim);
+			for (int i = 0; i < dim*dim; i++) {
+				pixels[i] = _pixels[i];
+			}
+		}
+
+		Map(int _dim) {
+			dim = _dim;
+			pixels = (byte*)malloc(dim*dim);
+		}
+		
+		Map(char* fp) {
+			load(fp);
+		}
+
+		~Map() {
+			free(pixels);
+		}
 
 		// NOTE: Replaces if there is anything already in the map.
 		bool load(char* fp) {
@@ -53,33 +82,6 @@ namespace blib {
 			if (x >= dim || y >= dim || x < 0 || y < 0)
 				return;
 			pixels[y*dim + x] = p;
-		}
-
-		Map() {
-			pixels = nullptr;
-			dim = 0;
-		}
-
-		// NOTE: Copies _pixels
-		Map(byte* _pixels, int _dim) {
-			dim = _dim;
-			pixels = (byte*)malloc(dim*dim);
-			for (int i = 0; i < dim*dim; i++) {
-				pixels[i] = _pixels[i];
-			}
-		}
-
-		Map(int _dim) {
-			dim = _dim;
-			pixels = (byte*)malloc(dim*dim);
-		}
-		
-		Map(char* fp) {
-			load(fp);
-		}
-
-		~Map() {
-			free(pixels);
 		}
 
 		// This is essentially part of the convolution
@@ -176,15 +178,12 @@ namespace blib {
 	};
 
 	// TODO: Add padding
-	struct Kernel {
-		byte stride = 1;
+	class Kernel {
+		public:
+		byte stride;
 		Map map;
 
-		Kernel(Map _map) {
-			map = _map;
-		}
-		
-		Kernel(Map _map, byte _stride) {
+		Kernel(Map _map, byte _stride = 1) {
 			map = _map;
 			stride = _stride;
 		}
@@ -225,15 +224,44 @@ namespace blib {
 		LAYER_C_MIN,	// Convolution with min-pool applied
 	};
 
-	struct LayerCfg {
+	class LayerCfg {
+		public:
 		char type;
-		int unitsN;
 		char afn;
+		int unitsN;
+
+		LayerCfg(int _unitsN, char _type=0, int _afn=0) {
+			unitsN = _unitsN;
+			type = _type;
+			afn = _afn;
+		}
 	};
 
 	// Convolutional brain
 	class BrainCfg {
-		
+		public:
+		u::Stack<LayerCfg> s;
+
+		BrainCfg() {
+			s = u::Stack<LayerCfg>();
+		}
+
+		BrainCfg(LayerCfg* layers, int layersN) {
+			s = u::Stack<LayerCfg>(layers, layersN);
+		}
+
+		void add(LayerCfg& l) {
+			s.push(l);
+		}
+	};
+
+	class Brain {
+		public:
+		BrainCfg cfg;
+
+		Brain(BrainCfg& _cfg) {
+			cfg = _cfg;
+		}
 	};
 
 	// Fully connected brain
@@ -303,7 +331,6 @@ int main() {
 	blib::byte p2[] = {
 		0,1, 
 		1,0};
-
 
 	blib::Map a(p, 4);
 	blib::Map pooled = a.poolMax(2,2);
