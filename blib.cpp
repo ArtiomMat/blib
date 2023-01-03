@@ -283,43 +283,6 @@ namespace blib {
 		byte output;
 	};
 
-	struct layer {
-		cell* cells;
-		int cells_n;
-	};
-
-	struct hyper_params {
-		
-		int input_cells_n;
-		int output_cells_n;
-
-		// false will mean all hidden layers will be the size of the first.
-		// possibly shorter training, but slower brain with useless neurons.
-		// true mans the structure of the brain will sride to be pyramid-like.
-		// possibly longer training, but a more optimized and practical brain.
-		bool hidden_layers_shrink;
-		int hidden_layers_n;
-		int first_hidden_layer_size;
-	};
-
-	struct brain {
-		public:
-		brain() {
-
-		}
-
-		brain(hyper_params& cfg) {
-
-		}
-
-		protected:
-		float* input_values;
-		float* output_values;
-
-		layer* layers;
-		int layers_n;
-	};
-
 }
 
 int main() {
