@@ -65,19 +65,25 @@ public class Map {
 
 	public void setPixel(int x, int y, byte[] pixel) {
 		for (int i = 0; i < pixelFormat; i++)
-			pixels[y*width+x+i] = pixel[i];
+			pixels[(y*width+x)*pixelFormat+i] = pixel[i];
 	}
 
 	public void getPixel(int x, int y, byte[] pixel) {
 		for (int i = 0; i < pixelFormat; i++)
-			pixels[y*width+x+i] = pixel[i];
+			pixel[i] = pixels[(y*width+x)*pixelFormat+i];
 	}
 
 	public byte[] getPixel(int x, int y) {
 		byte[] pixel = new byte[pixelFormat];
-		for (int i = 0; i < pixelFormat; i++)
-			pixels[y*width+x+i] = pixel[i];
+		getPixel(x, y, pixel);
 		return pixel;
+	}
+
+	private void init(Raster r) {
+		width = r.getWidth();
+		height = r.getHeight();
+		
+		pixels = new byte[width*height*pixelFormat];
 	}
 
 	// TODO: Implement: save, load
@@ -87,6 +93,8 @@ public class Map {
 		BufferedImage bf = ImageIO.read(new File(fp));
 
 		Raster r = bf.getData();
+
+
 		// Determining pixelFormat
 		{
 			ColorModel cm = bf.getColorModel();
@@ -95,46 +103,80 @@ public class Map {
 			int depth = cm.getPixelSize();
 			int colors = cm.getNumColorComponents();
 			
-			boolean success = true;
-			if (!a && depth == 8 && colors == 1)
+			boolean supported = true;
+			if (!a && depth == 8 && colors == 1) {
 				pixelFormat = L8;
-			else if (!a && depth == 16 && colors == 3) {
-				// Make sure we are in 5-6-5 order
-				int[] sizes = cm.getComponentSize();
-				if (sizes[1] != 6)
-					success = false;
-				pixelFormat = RGB16;
+
+				System.out.println(cm.getColorSpace());
+
+				init(r);
+				// We use bf.getRGB in grayscale because r.getPixel
+				// seems to return contrasted values, no idea why.
+				int rgb;
+				byte[] pByte = new byte[pixelFormat];
+				for (int x = 0; x < width; x++) {
+					for (int y = 0; y < width; y++) {
+						rgb = bf.getRGB(x, y);
+						pByte[0] = (byte)rgb;
+						setPixel(x, y, pByte);
+					}
+				}
 			}
-			else if (!a && depth == 24 && colors == 3)
+			else if (!a && depth == 16 && colors == 3) {
+				// We need to make sure we are in 5-6-5 order
+				if (cm.getComponentSize()[1] != 6)
+					supported = false;
+				else {
+					pixelFormat = RGB16;
+					// TODO
+					supported = false;
+				}
+			}
+			else if (!a && depth == 24 && colors == 3) {
 				pixelFormat = RGB24;
+				System.out.println("LOL");
+				init(r);
+				int[] p = new int[pixelFormat];
+				byte[] pByte = new byte[pixelFormat];
+				for (int x = 0; x < width; x++) {
+					for (int y = 0; y < width; y++) {
+						r.getPixel(x, y, p);
+						pByte[0] = (byte)p[0];
+						pByte[1] = (byte)p[1];
+						pByte[2] = (byte)p[2];
+						if (x == 0 && y == 0)
+							System.out.println();
+
+						setPixel(x, y, pByte);
+					}
+				}
+			}
 			else if (a && depth == 32 && colors == 3) {
 				pixelFormat = ARGB32;
-				System.out.println("HAS ALPHA :O");
+				/* TODO: Make sure the pixels are in ARGB and not RGBA, maybe test it with
+				image with alpha and see which index corresponds to the alpha. */
+				supported = false;
 			}
 			else
-				success = false;
+				supported = false;
 			
-			if (!success) {
+			if (!supported) {
 				throw new IOException(
 					"Map.load(): Unsupported pixel format. Check Map's formats at the top of the class definition."
 				);
 			}
 		}
 		
-		width = r.getWidth();
-		height = r.getHeight();
-		
-		pixels = new byte[width*height*pixelFormat];
 		
 		/*byte[] rBuf = ((DataBufferByte) r.getDataBuffer()).getData();
 		for (int i = 0; i < pixels.length; i++) {
 			pixels[i] = rBuf[i];
 		}*/
 
-		byte[] pixel = new byte[pixelFormat];
-		for (int i )
+		
 	}
 
+	// FIXME: Contrast getting stronger as you save? it gets darker for some reason.
 	public void save(String fp) throws IOException {
 		int type;
 		if (pixelFormat == L8)
@@ -150,15 +192,21 @@ public class Map {
 		for(int x = 0; x < width; x++) {
 			for(int y = 0; y < height; y++) {
 				byte[] pixel = getPixel(x, y);
+				int[] pixelInt = new int[pixelFormat];
+				for (int i = 0; i < pixel.length; i++)
+					pixelInt[i] = (int)(pixel[i]) & 0xFF;
+
 				int rgb;
-				if (pixelFormat == 3)
-					rgb = (int)pixel[1]<<16 | (int)pixel[2] << 8 | (int)pixel[3];
-				else if (pixelFormat == 3)
-					rgb = (int)pixel[0]<<16 | (int)pixel[1] << 8 | (int)pixel[2];
+				if (pixelFormat == 4)
+					rgb = pixelInt[1]<<16 | pixelInt[2] << 8 | pixelInt[3];
+				else if (pixelFormat == 3) {
+					rgb = pixelInt[0]<<16 | pixelInt[1] << 8 | pixelInt[2];
+					// System.out.println(pixelInt[0]);
+				}
 				else if (pixelFormat == 2)
 					rgb = 0;// TODO
 				else
-					rgb = (int)pixel[0]<<16 | (int)pixel[0] << 8 | (int)pixel[0];
+					rgb = pixelInt[0]<<16 | pixelInt[0] << 8 | pixelInt[0];
 				
 				bi.setRGB(x, y, rgb);
 			}
